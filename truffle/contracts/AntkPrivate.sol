@@ -52,10 +52,18 @@ contract AntkPrivate is Ownable {
             _miniToBuy(_amount),
             "Ce montant est inferieur au montant minimum !"
         );
+        require(calculNumberOfTokenToBuy(_amount)<=numberOfTokenAvaible, "Il ne reste plus assez de tokens disponibles !");
         _;
     }
 
-    function calculnumberOfTokenToBuy(uint128 _amountDollars)
+        function _miniToBuy(uint128 _amount) private view returns (bool) {
+        if (numberOfTokenAvaible > 400000000 && _amount >= 250) return true;
+        if (numberOfTokenAvaible > 300000000 && _amount >= 100) return true;
+        if (numberOfTokenAvaible <= 300000000 && _amount >= 50) return true;
+        else return false;
+    }
+
+    function calculNumberOfTokenToBuy(uint128 _amountDollars)
         public
         view
         returns (uint128)
@@ -94,13 +102,6 @@ contract AntkPrivate is Ownable {
         }
     }
 
-    function _miniToBuy(uint128 _amount) private view returns (bool) {
-        if (numberOfTokenAvaible > 400000000 && _amount >= 250) return true;
-        if (numberOfTokenAvaible > 300000000 && _amount >= 100) return true;
-        if (numberOfTokenAvaible <= 300000000 && _amount >= 50) return true;
-        else return false;
-    }
-
     function buyTokenWithTether(uint128 _amountDollars)
         external
         requireToBuy(_amountDollars)
@@ -129,13 +130,13 @@ contract AntkPrivate is Ownable {
         require(result, "Transfer from error");
 
         investors[msg.sender]
-            .numberOfTokensPurchased += calculnumberOfTokenToBuy(
+            .numberOfTokensPurchased += calculNumberOfTokenToBuy(
             _amountDollars
         );
         investors[msg.sender].amountSpendInDollars += _amountDollars;
         investors[msg.sender].asset = "USDT";
 
-        numberOfTokenAvaible -= calculnumberOfTokenToBuy(_amountDollars);
+        numberOfTokenAvaible -= calculNumberOfTokenToBuy(_amountDollars);
     }
 
     /**
@@ -158,20 +159,18 @@ contract AntkPrivate is Ownable {
         payable
         requireToBuy(uint128((msg.value * getLatestPrice()) / 10**26))
     {
-        uint128 amountDollars = uint128(
-            (msg.value * getLatestPrice()) / 10**26
-        );
+
         require(
             msg.sender.balance > msg.value,
             "Vous n'avez pas assez d'ETH !"
         );
 
         investors[msg.sender]
-            .numberOfTokensPurchased += calculnumberOfTokenToBuy(amountDollars);
-        investors[msg.sender].amountSpendInDollars += amountDollars;
+            .numberOfTokensPurchased += calculNumberOfTokenToBuy(uint128((msg.value * getLatestPrice()) / 10**26));
+        investors[msg.sender].amountSpendInDollars += uint128((msg.value * getLatestPrice()) / 10**26);
         investors[msg.sender].asset = "ETH";
 
-        numberOfTokenAvaible -= calculnumberOfTokenToBuy(amountDollars);
+        numberOfTokenAvaible -= calculNumberOfTokenToBuy(uint128((msg.value * getLatestPrice()) / 10**26));
     }
 }
 
