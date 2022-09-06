@@ -49,14 +49,14 @@ contract AntkPrivate is Ownable {
             "Vous ne pouvez pas investir pour le moment !"
         );
         require(
-            _miniToBuy(_amount),
+            _minimumAmountToBuy(_amount),
             "Ce montant est inferieur au montant minimum !"
         );
         require(calculNumberOfTokenToBuy(_amount)<=numberOfTokenAvaible, "Il ne reste plus assez de tokens disponibles !");
         _;
     }
 
-        function _miniToBuy(uint128 _amount) private view returns (bool) {
+        function _minimumAmountToBuy(uint128 _amount) private view returns (bool) {
         if (numberOfTokenAvaible > 400000000 && _amount >= 250) return true;
         if (numberOfTokenAvaible > 300000000 && _amount >= 100) return true;
         if (numberOfTokenAvaible <= 300000000 && _amount >= 50) return true;
@@ -107,11 +107,6 @@ contract AntkPrivate is Ownable {
         requireToBuy(_amountDollars)
     {
         require(
-            (investors[msg.sender].isWhitelisted &&
-                salesStatus == SalesStatus(1)) || salesStatus == SalesStatus(2),
-            "Vous ne pouvez pas investir pour le moment !"
-        );
-        require(
             IERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F).balanceOf(
                 msg.sender
             ) >= _amountDollars * 10**6,
@@ -159,18 +154,26 @@ contract AntkPrivate is Ownable {
         payable
         requireToBuy(uint128((msg.value * getLatestPrice()) / 10**26))
     {
-
         require(
             msg.sender.balance > msg.value,
             "Vous n'avez pas assez d'ETH !"
         );
+        uint128 amountInDollars = uint128((msg.value * getLatestPrice()) / 10**26);
 
         investors[msg.sender]
-            .numberOfTokensPurchased += calculNumberOfTokenToBuy(uint128((msg.value * getLatestPrice()) / 10**26));
-        investors[msg.sender].amountSpendInDollars += uint128((msg.value * getLatestPrice()) / 10**26);
+            .numberOfTokensPurchased += calculNumberOfTokenToBuy(amountInDollars);
+        investors[msg.sender].amountSpendInDollars += amountInDollars;
         investors[msg.sender].asset = "ETH";
 
-        numberOfTokenAvaible -= calculNumberOfTokenToBuy(uint128((msg.value * getLatestPrice()) / 10**26));
+        numberOfTokenAvaible -= calculNumberOfTokenToBuy(amountInDollars);
+    }
+
+    function getFunds() external onlyOwner {
+        uint theter = IERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F).balanceOf(address(this));
+        IERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F).transfer(msg.sender, theter);
+
+        (bool sent,) = msg.sender.call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
     }
 }
 
