@@ -14,12 +14,17 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
  */
 
 contract AntkPrivate is Ownable {
+    uint128 public numberOfTokenToSell = 500000000;
+    address tether = 0xdAC17F958D2ee523a2206206994597C13D831ec7 ;
+
     struct Investor {
         bool isWhitelisted;
         uint128 numberOfTokensPurchased;
         uint128 amountSpendInDollars;
         string asset;
     }
+
+    mapping(address => Investor) public investors;
 
     enum SalesStatus {
         AdminTime,
@@ -28,19 +33,12 @@ contract AntkPrivate is Ownable {
     }
 
     SalesStatus public salesStatus;
-    mapping(address => Investor) public investors;
 
-    uint128 public numberOfTokenAvaible = 500000000;
-
-    function setWhitelist(address[] memory _address) external onlyOwner {
-        for (uint256 i = 0; i < _address.length; i++) {
-            investors[_address[i]].isWhitelisted = true;
-        }
-    }
-
-    function changeSalesStatus(uint256 _idStatus) external onlyOwner {
-        salesStatus = SalesStatus(_idStatus);
-    }
+    event TokensBuy(
+        address addressBuyer,
+        uint128 numberOfTokensPurchased,
+        uint128 amountSpendInDollars
+    );
 
     modifier requireToBuy(uint128 _amount) {
         require(
@@ -52,14 +50,27 @@ contract AntkPrivate is Ownable {
             _minimumAmountToBuy(_amount),
             "Ce montant est inferieur au montant minimum !"
         );
-        require(calculNumberOfTokenToBuy(_amount)<=numberOfTokenAvaible, "Il ne reste plus assez de tokens disponibles !");
+        require(
+            calculNumberOfTokenToBuy(_amount) <= numberOfTokenToSell,
+            "Il ne reste plus assez de tokens disponibles !"
+        );
         _;
     }
 
-        function _minimumAmountToBuy(uint128 _amount) private view returns (bool) {
-        if (numberOfTokenAvaible > 400000000 && _amount >= 250) return true;
-        if (numberOfTokenAvaible > 300000000 && _amount >= 100) return true;
-        if (numberOfTokenAvaible <= 300000000 && _amount >= 50) return true;
+    function setWhitelist(address[] memory _address) external onlyOwner {
+        for (uint256 i = 0; i < _address.length; i++) {
+            investors[_address[i]].isWhitelisted = true;
+        }
+    }
+
+    function changeSalesStatus(uint256 _idStatus) external onlyOwner {
+        salesStatus = SalesStatus(_idStatus);
+    }
+
+    function _minimumAmountToBuy(uint128 _amount) private view returns (bool) {
+        if (numberOfTokenToSell > 400000000 && _amount >= 250) return true;
+        if (numberOfTokenToSell > 300000000 && _amount >= 100) return true;
+        if (numberOfTokenToSell <= 300000000 && _amount >= 50) return true;
         else return false;
     }
 
@@ -72,29 +83,29 @@ contract AntkPrivate is Ownable {
             _amountDollars <= 100000,
             "Vous ne pouvez pas investir plus de 100 000 $"
         );
-        if (numberOfTokenAvaible > 400000000) {
+        if (numberOfTokenToSell > 400000000) {
             if (
-                (numberOfTokenAvaible - (_amountDollars * 10000) / 6) >=
+                (numberOfTokenToSell - (_amountDollars * 10000) / 6) >=
                 400000000
             ) return (_amountDollars * 10000) / 6;
             else {
                 return
-                    (numberOfTokenAvaible - 400000000) +
+                    (numberOfTokenToSell - 400000000) +
                     ((_amountDollars -
-                        (((numberOfTokenAvaible - 400000000) * 6) / 10000)) /
+                        (((numberOfTokenToSell - 400000000) * 6) / 10000)) /
                         8) *
                     10000;
             }
-        } else if (numberOfTokenAvaible > 300000000) {
+        } else if (numberOfTokenToSell > 300000000) {
             if (
-                (numberOfTokenAvaible - (_amountDollars * 10000) / 8) >=
+                (numberOfTokenToSell - (_amountDollars * 10000) / 8) >=
                 300000000
             ) return (_amountDollars * 10000) / 8;
             else {
                 return
-                    (numberOfTokenAvaible - 300000000) +
+                    (numberOfTokenToSell - 300000000) +
                     (_amountDollars -
-                        (((numberOfTokenAvaible - 300000000) * 8) / 10000)) *
+                        (((numberOfTokenToSell - 300000000) * 8) / 10000)) *
                     1000;
             }
         } else {
@@ -107,20 +118,20 @@ contract AntkPrivate is Ownable {
         requireToBuy(_amountDollars)
     {
         require(
-            IERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F).balanceOf(
+            IERC20(tether).balanceOf(
                 msg.sender
             ) >= _amountDollars * 10**6,
             "Vous n'avez pas assez de Tether !"
         );
         require(
-            IERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F).allowance(
+            IERC20(tether).allowance(
                 msg.sender,
                 address(this)
             ) >= _amountDollars * 10**6,
             "Vous n'avez pas approuve le transfert de Tether !"
         );
 
-        bool result = IERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F)
+        bool result = IERC20(tether)
             .transferFrom(msg.sender, address(this), _amountDollars * 10**6);
         require(result, "Transfer from error");
 
@@ -131,7 +142,13 @@ contract AntkPrivate is Ownable {
         investors[msg.sender].amountSpendInDollars += _amountDollars;
         investors[msg.sender].asset = "USDT";
 
-        numberOfTokenAvaible -= calculNumberOfTokenToBuy(_amountDollars);
+        numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars);
+
+        emit TokensBuy(
+            msg.sender,
+            calculNumberOfTokenToBuy(_amountDollars),
+            _amountDollars
+        );
     }
 
     /**
@@ -158,21 +175,35 @@ contract AntkPrivate is Ownable {
             msg.sender.balance > msg.value,
             "Vous n'avez pas assez d'ETH !"
         );
-        uint128 amountInDollars = uint128((msg.value * getLatestPrice()) / 10**26);
+        uint128 amountInDollars = uint128(
+            (msg.value * getLatestPrice()) / 10**26
+        );
 
         investors[msg.sender]
-            .numberOfTokensPurchased += calculNumberOfTokenToBuy(amountInDollars);
+            .numberOfTokensPurchased += calculNumberOfTokenToBuy(
+            amountInDollars
+        );
         investors[msg.sender].amountSpendInDollars += amountInDollars;
         investors[msg.sender].asset = "ETH";
 
-        numberOfTokenAvaible -= calculNumberOfTokenToBuy(amountInDollars);
+        numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars);
+
+        emit TokensBuy(
+            msg.sender,
+            calculNumberOfTokenToBuy(amountInDollars),
+            amountInDollars
+        );
     }
 
     function getFunds() external onlyOwner {
-        uint theter = IERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F).balanceOf(address(this));
-        IERC20(0x07865c6E87B9F70255377e024ace6630C1Eaa37F).transfer(msg.sender, theter);
+        IERC20(tether).transfer(
+            owner(),
+            IERC20(tether).balanceOf(
+                address(this)
+            )
+        );
 
-        (bool sent,) = msg.sender.call{value: address(this).balance}("");
+        (bool sent, ) = owner().call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
     }
 }
@@ -180,7 +211,7 @@ contract AntkPrivate is Ownable {
 // ETH/USD Chainlink (ETH Mainet): 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419 (8 décimales)
 // ETH/USD Chainlink (ETH Goerli Testnet): 0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e (8 décimales)
 
-// USDT mainet address 0xdac17f958d2ee523a2206206994597c13d831ec7 (6 décimales)
+// USDT mainet address 0xdAC17F958D2ee523a2206206994597C13D831ec7 (6 décimales)
 // USDC Ropsten for tests : 0x07865c6E87B9F70255377e024ace6630C1Eaa37F (6 décimales)
 
 //Interface     function investors (address _address) external view returns
