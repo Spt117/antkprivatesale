@@ -11,12 +11,30 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
  *
  * @notice This contract is a pre sale contract
  *
+ * @author @spt117 on telegram
+ *
+ * @dev Buyers can buy only with ETH or USDT
+ * @dev Can add whitelists address to buy first
+ *
+ * @dev Implementation of the {IERC20} interface
+ * @dev Implementation of the {Ownable} contract
+ * @dev Implementation of the {AggregatorV3Interface} contract
+ *
  */
 
 contract AntkPrivate is Ownable {
+    /**
+     * @dev numberOfTokenToSell is the number of ANTK to sell
+     * @dev It is update when someone buy
+     */
     uint128 public numberOfTokenToSell = 500000000;
-    address tether = 0xdAC17F958D2ee523a2206206994597C13D831ec7 ;
 
+    /**
+     * @dev tether is the only ERC20 asset to buy ANTK
+     */
+    address tether = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+
+    /// save informations about the buyers
     struct Investor {
         bool isWhitelisted;
         uint128 numberOfTokensPurchased;
@@ -24,22 +42,32 @@ contract AntkPrivate is Ownable {
         string asset;
     }
 
+    /// buyer's address  => buyer's informations
     mapping(address => Investor) public investors;
 
+    /// status of this sales contract
     enum SalesStatus {
         AdminTime,
         SalesForWhitelist,
         SalesForAll
     }
 
+    
+    /// salesStatus is the status of the sales
     SalesStatus public salesStatus;
 
+    /// event when someone buy
     event TokensBuy(
         address addressBuyer,
         uint128 numberOfTokensPurchased,
         uint128 amountSpendInDollars
     );
 
+    /**
+     * @notice check that the purchase parameters are correct
+     * @dev called in function buy with ETH and buy with USDT
+     * @param _amount is the amount to buy in dollars
+     */
     modifier requireToBuy(uint128 _amount) {
         require(
             (investors[msg.sender].isWhitelisted &&
@@ -57,23 +85,44 @@ contract AntkPrivate is Ownable {
         _;
     }
 
+    /**
+     * @notice add the address to the whitelist
+     * @dev only the Owner of the contract can call this function
+     * @param _address is an array of address
+     */
     function setWhitelist(address[] memory _address) external onlyOwner {
         for (uint256 i = 0; i < _address.length; i++) {
             investors[_address[i]].isWhitelisted = true;
         }
     }
 
+    /**
+     * @notice change the status of the sale
+     * @dev only the Owner of the contract can call this function
+     * @param _idStatus is the id of the status
+     */
     function changeSalesStatus(uint256 _idStatus) external onlyOwner {
         salesStatus = SalesStatus(_idStatus);
     }
 
-    function _minimumAmountToBuy(uint128 _amount) private view returns (bool) {
-        if (numberOfTokenToSell > 400000000 && _amount >= 250) return true;
-        if (numberOfTokenToSell > 300000000 && _amount >= 100) return true;
-        if (numberOfTokenToSell <= 300000000 && _amount >= 50) return true;
+    /**
+     * @notice check the minimum require to buy
+     * @dev this is a private function, called in the modifier
+     * @param _amountDollars is the amount to buy in dollars
+     */
+    function _minimumAmountToBuy(uint128 _amountDollars) private view returns (bool) {
+        if (numberOfTokenToSell > 400000000 && _amountDollars >= 250) return true;
+        if (numberOfTokenToSell > 300000000 && _amountDollars >= 100) return true;
+        if (numberOfTokenToSell <= 300000000 && _amountDollars >= 50) return true;
         else return false;
     }
 
+    /**
+     * @notice calcul number of token to buy
+     * @dev this is a public function, called in the modifier and buy function
+     * @dev we use it with the dapp to show the number of token to buy
+     * @param _amountDollars is the amount to buy in dollars
+     */
     function calculNumberOfTokenToBuy(uint128 _amountDollars)
         public
         view
@@ -113,26 +162,29 @@ contract AntkPrivate is Ownable {
         }
     }
 
+    /**
+     * @notice buy ANTK with USDT
+     * @param _amountDollars is the amount to buy in dollars
+     */
     function buyTokenWithTether(uint128 _amountDollars)
         external
         requireToBuy(_amountDollars)
     {
         require(
-            IERC20(tether).balanceOf(
-                msg.sender
-            ) >= _amountDollars * 10**6,
+            IERC20(tether).balanceOf(msg.sender) >= _amountDollars * 10**6,
             "Vous n'avez pas assez de Tether !"
         );
         require(
-            IERC20(tether).allowance(
-                msg.sender,
-                address(this)
-            ) >= _amountDollars * 10**6,
+            IERC20(tether).allowance(msg.sender, address(this)) >=
+                _amountDollars * 10**6,
             "Vous n'avez pas approuve le transfert de Tether !"
         );
 
-        bool result = IERC20(tether)
-            .transferFrom(msg.sender, address(this), _amountDollars * 10**6);
+        bool result = IERC20(tether).transferFrom(
+            msg.sender,
+            address(this),
+            _amountDollars * 10**6
+        );
         require(result, "Transfer from error");
 
         investors[msg.sender]
@@ -156,7 +208,7 @@ contract AntkPrivate is Ownable {
      */
     function getLatestPrice() public view returns (uint128) {
         AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e
+            0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
         );
         (, int256 price, , , ) = priceFeed.latestRoundData();
 
@@ -164,7 +216,8 @@ contract AntkPrivate is Ownable {
     }
 
     /**
-     * @notice Buy Antk with ETH
+     * @notice buy ANTK with ETH
+     * @dev msg.value is the amount of ETH to send buy the buyer
      */
     function buyTokenWithEth()
         external
@@ -195,12 +248,14 @@ contract AntkPrivate is Ownable {
         );
     }
 
+    /**
+     * @notice send the USDT and the ETH to ANTK company
+     * @dev only the Owner of the contract can call this function
+     */
     function getFunds() external onlyOwner {
         IERC20(tether).transfer(
             owner(),
-            IERC20(tether).balanceOf(
-                address(this)
-            )
+            IERC20(tether).balanceOf(address(this))
         );
 
         (bool sent, ) = owner().call{value: address(this).balance}("");
