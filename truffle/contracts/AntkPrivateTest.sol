@@ -20,17 +20,24 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
  *
  */
 
-contract AntkPrivate is Ownable {
+contract AntkPrivateTest is Ownable {
+
+    /**
+     * @dev tether is the only ERC20 asset to buy ANTK
+     */
+    address usdt;
+
+    constructor (address _tether) {
+        usdt = _tether;
+    }
+
+    
     /**
      * @dev numberOfTokenToSell is the number of ANTK to sell
      * @dev It is update when someone buy
      */
     uint128 public numberOfTokenToSell = 500000000;
 
-    /**
-     * @dev tether is the only ERC20 asset to buy ANTK
-     */
-    address usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
     /// save informations about the buyers
     struct Investor {
@@ -213,7 +220,7 @@ contract AntkPrivate is Ownable {
             0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
         );
         (, int256 price, , , ) = priceFeed.latestRoundData();
-
+        price = 150000000000;
         return uint128(uint256(price));
     }
 
