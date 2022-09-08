@@ -109,10 +109,10 @@ contract('AntkPrivateTest', accounts => {
 
   // ::::::::::::: buyTokenWithTether ::::::::::::: //
 
-  describe("test of buyTokenWithTether", () => {
+  describe.only("test of buyTokenWithTether", () => {
 
     beforeEach(async () => {
-      USDTinstance = await USDT.new({ from: owner })
+      USDTinstance = await USDT.new({ from: buyer4 })
       AntkPrivateInstance = await AntkPrivateTest.new(USDTinstance.address, { from: owner })
     })
 
@@ -128,6 +128,17 @@ contract('AntkPrivateTest', accounts => {
     it("...should revert because of amount", async () => {
       await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
       await expectRevert(AntkPrivateInstance.buyTokenWithTether(10, { from: other }), "Ce montant est inferieur au montant minimum !");
+    })
+
+    it("...should revert because of not approve", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await expectRevert(AntkPrivateInstance.buyTokenWithTether(50000, { from: buyer4 }), "Vous n'avez pas approuve le transfert de Tether !");
+    })
+
+    it("...should revert because of not enough USDT", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await USDTinstance.approve(AntkPrivateInstance.address, 50000000000, { from: buyer5 })
+      await expectRevert(AntkPrivateInstance.buyTokenWithTether(50000, { from: buyer5 }), "Vous n'avez pas assez de Tether !");
     })
 
   })

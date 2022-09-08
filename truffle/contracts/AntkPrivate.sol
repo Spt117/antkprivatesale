@@ -49,7 +49,7 @@ contract AntkPrivate is Ownable {
         SalesForWhitelist,
         SalesForAll
     }
-    
+
     /// salesStatus is the status of the sales
     SalesStatus public salesStatus;
 
@@ -112,10 +112,17 @@ contract AntkPrivate is Ownable {
      * @dev this is a private function, called in the modifier
      * @param _amountDollars is the amount to buy in dollars
      */
-    function _minimumAmountToBuy(uint128 _amountDollars) private view returns (bool) {
-        if (numberOfTokenToSell > 400000000 && _amountDollars >= 250) return true;
-        if (numberOfTokenToSell > 300000000 && _amountDollars >= 100) return true;
-        if (numberOfTokenToSell <= 300000000 && _amountDollars >= 50) return true;
+    function _minimumAmountToBuy(uint128 _amountDollars)
+        private
+        view
+        returns (bool)
+    {
+        if (numberOfTokenToSell > 400000000 && _amountDollars >= 250)
+            return true;
+        if (numberOfTokenToSell > 300000000 && _amountDollars >= 100)
+            return true;
+        if (numberOfTokenToSell <= 300000000 && _amountDollars >= 50)
+            return true;
         else return false;
     }
 
@@ -173,13 +180,13 @@ contract AntkPrivate is Ownable {
         requireToBuy(_amountDollars)
     {
         require(
-            IERC20(usdt).balanceOf(msg.sender) >= _amountDollars * 10**6,
-            "Vous n'avez pas assez de Tether !"
-        );
-        require(
             IERC20(usdt).allowance(msg.sender, address(this)) >=
                 _amountDollars * 10**6,
             "Vous n'avez pas approuve le transfert de Tether !"
+        );
+        require(
+            IERC20(usdt).balanceOf(msg.sender) >= _amountDollars * 10**6,
+            "Vous n'avez pas assez de Tether !"
         );
 
         bool result = IERC20(usdt).transferFrom(
@@ -255,10 +262,7 @@ contract AntkPrivate is Ownable {
      * @dev only the Owner of the contract can call this function
      */
     function getFunds() external onlyOwner {
-        IERC20(usdt).transfer(
-            owner(),
-            IERC20(usdt).balanceOf(address(this))
-        );
+        IERC20(usdt).transfer(owner(), IERC20(usdt).balanceOf(address(this)));
 
         (bool sent, ) = owner().call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");

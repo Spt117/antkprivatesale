@@ -21,23 +21,20 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
  */
 
 contract AntkPrivateTest is Ownable {
-
     /**
      * @dev tether is the only ERC20 asset to buy ANTK
      */
     address usdt;
 
-    constructor (address _tether) {
+    constructor(address _tether) {
         usdt = _tether;
     }
 
-    
     /**
      * @dev numberOfTokenToSell is the number of ANTK to sell
      * @dev It is update when someone buy
      */
     uint128 public numberOfTokenToSell = 500000000;
-
 
     /// save informations about the buyers
     struct Investor {
@@ -56,7 +53,7 @@ contract AntkPrivateTest is Ownable {
         SalesForWhitelist,
         SalesForAll
     }
-    
+
     /// salesStatus is the status of the sales
     SalesStatus public salesStatus;
 
@@ -119,10 +116,17 @@ contract AntkPrivateTest is Ownable {
      * @dev this is a private function, called in the modifier
      * @param _amountDollars is the amount to buy in dollars
      */
-    function _minimumAmountToBuy(uint128 _amountDollars) private view returns (bool) {
-        if (numberOfTokenToSell > 400000000 && _amountDollars >= 250) return true;
-        if (numberOfTokenToSell > 300000000 && _amountDollars >= 100) return true;
-        if (numberOfTokenToSell <= 300000000 && _amountDollars >= 50) return true;
+    function _minimumAmountToBuy(uint128 _amountDollars)
+        private
+        view
+        returns (bool)
+    {
+        if (numberOfTokenToSell > 400000000 && _amountDollars >= 250)
+            return true;
+        if (numberOfTokenToSell > 300000000 && _amountDollars >= 100)
+            return true;
+        if (numberOfTokenToSell <= 300000000 && _amountDollars >= 50)
+            return true;
         else return false;
     }
 
@@ -180,13 +184,13 @@ contract AntkPrivateTest is Ownable {
         requireToBuy(_amountDollars)
     {
         require(
-            IERC20(usdt).balanceOf(msg.sender) >= _amountDollars * 10**6,
-            "Vous n'avez pas assez de Tether !"
-        );
-        require(
             IERC20(usdt).allowance(msg.sender, address(this)) >=
                 _amountDollars * 10**6,
             "Vous n'avez pas approuve le transfert de Tether !"
+        );
+        require(
+            IERC20(usdt).balanceOf(msg.sender) >= _amountDollars * 10**6,
+            "Vous n'avez pas assez de Tether !"
         );
 
         bool result = IERC20(usdt).transferFrom(
@@ -262,10 +266,7 @@ contract AntkPrivateTest is Ownable {
      * @dev only the Owner of the contract can call this function
      */
     function getFunds() external onlyOwner {
-        IERC20(usdt).transfer(
-            owner(),
-            IERC20(usdt).balanceOf(address(this))
-        );
+        IERC20(usdt).transfer(owner(), IERC20(usdt).balanceOf(address(this)));
 
         (bool sent, ) = owner().call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
