@@ -5,6 +5,6 @@ module.exports = function (deployer) {
 
   // deployer.deploy(USDT);
   
-  deployer.deploy(AntkPrivateTest, '0xaf808444D88d83ceCA6aDfa103472b3F23601a7e');
+  deployer.deploy(AntkPrivateTest, '0x62ec7e60ddf568B3D1a5EB59412EEA12F91B2af1');
 };
 //  console.log(USDT.network.address);
