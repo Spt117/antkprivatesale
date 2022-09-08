@@ -203,13 +203,13 @@ contract AntkPrivate is Ownable {
         investors[msg.sender].amountSpendInDollars += _amountDollars;
         investors[msg.sender].asset = "USDT";
 
-        numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars);
-
         emit TokensBuy(
             msg.sender,
             calculNumberOfTokenToBuy(_amountDollars),
             _amountDollars
         );
+
+                numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars);
     }
 
     /**
@@ -248,13 +248,13 @@ contract AntkPrivate is Ownable {
         investors[msg.sender].amountSpendInDollars += amountInDollars;
         investors[msg.sender].asset = "ETH";
 
-        numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars);
-
         emit TokensBuy(
             msg.sender,
             calculNumberOfTokenToBuy(amountInDollars),
             amountInDollars
         );
+
+                numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars);
     }
 
     /**

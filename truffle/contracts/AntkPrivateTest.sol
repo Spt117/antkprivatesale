@@ -89,6 +89,10 @@ contract AntkPrivateTest is Ownable {
         _;
     }
 
+    fallback() external {}
+
+    receive() external payable {}
+
     /**
      * @notice add the address to the whitelist
      * @dev only the Owner of the contract can call this function
@@ -207,24 +211,24 @@ contract AntkPrivateTest is Ownable {
         investors[msg.sender].amountSpendInDollars += _amountDollars;
         investors[msg.sender].asset = "USDT";
 
-        numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars);
-
         emit TokensBuy(
             msg.sender,
             calculNumberOfTokenToBuy(_amountDollars),
             _amountDollars
         );
+
+        numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars);
     }
 
     /**
      * @notice Get price of ETH in $ with Chainlink
      */
-    function getLatestPrice() public view returns (uint128) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
-        );
-        (, int256 price, , , ) = priceFeed.latestRoundData();
-        price = 150000000000;
+    function getLatestPrice() public pure returns (uint128) {
+        // AggregatorV3Interface priceFeed = AggregatorV3Interface(
+        //     0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+        // );
+        // (, int256 price, , , ) = priceFeed.latestRoundData();
+        uint256 price = 150000000000;
         return uint128(uint256(price));
     }
 
@@ -252,13 +256,13 @@ contract AntkPrivateTest is Ownable {
         investors[msg.sender].amountSpendInDollars += amountInDollars;
         investors[msg.sender].asset = "ETH";
 
-        numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars);
-
         emit TokensBuy(
             msg.sender,
             calculNumberOfTokenToBuy(amountInDollars),
             amountInDollars
         );
+
+        numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars);
     }
 
     /**
@@ -270,6 +274,13 @@ contract AntkPrivateTest is Ownable {
 
         (bool sent, ) = owner().call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
+    }
+
+    /**
+     * @notice see the USDT and the ETH on the contract
+     */
+    function seeFunds() external view returns (uint256 USDT, uint256 ETH) {
+        return (IERC20(usdt).balanceOf(address(this)), address(this).balance);
     }
 }
 

@@ -2,7 +2,6 @@ const USDT = artifacts.require("./USDT.sol");
 const AntkPrivateTest = artifacts.require("./AntkPrivateTest.sol");
 
 const { BN, expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
-
 const { expect } = require('chai');
 
 contract('AntkPrivateTest', accounts => {
@@ -54,6 +53,7 @@ contract('AntkPrivateTest', accounts => {
   // ::::::::::::: changeSalesStatus ::::::::::::: //
 
   describe("test of changeSalesStatus", () => {
+
 
     beforeEach(async () => {
       USDTinstance = await USDT.new({ from: owner })
@@ -109,9 +109,10 @@ contract('AntkPrivateTest', accounts => {
 
   // ::::::::::::: buyTokenWithTether ::::::::::::: //
 
-  describe.only("test of buyTokenWithTether", () => {
+  describe("test of buyTokenWithTether", () => {
 
     beforeEach(async () => {
+
       USDTinstance = await USDT.new({ from: buyer4 })
       AntkPrivateInstance = await AntkPrivateTest.new(USDTinstance.address, { from: owner })
     })
@@ -125,11 +126,6 @@ contract('AntkPrivateTest', accounts => {
       await expectRevert(AntkPrivateInstance.buyTokenWithTether(50000, { from: other }), "Vous ne pouvez pas investir pour le moment !");
     })
 
-    it("...should revert because of amount", async () => {
-      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
-      await expectRevert(AntkPrivateInstance.buyTokenWithTether(10, { from: other }), "Ce montant est inferieur au montant minimum !");
-    })
-
     it("...should revert because of not approve", async () => {
       await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
       await expectRevert(AntkPrivateInstance.buyTokenWithTether(50000, { from: buyer4 }), "Vous n'avez pas approuve le transfert de Tether !");
@@ -141,6 +137,102 @@ contract('AntkPrivateTest', accounts => {
       await expectRevert(AntkPrivateInstance.buyTokenWithTether(50000, { from: buyer5 }), "Vous n'avez pas assez de Tether !");
     })
 
+    it("...should revert because of minimum amout to buy", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await USDTinstance.approve(AntkPrivateInstance.address, 50000000000, { from: buyer4 })
+      await expectRevert(AntkPrivateInstance.buyTokenWithTether(50, { from: buyer4 }), "Ce montant est inferieur au montant minimum !");
+    })
+
+    it("...should emit Tokensbuy", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await USDTinstance.approve(AntkPrivateInstance.address, 600000000000, { from: buyer4 })
+      const event = await AntkPrivateInstance.buyTokenWithTether(60000, { from: buyer4 });
+      expectEvent(event, "TokensBuy", { addressBuyer: buyer4, numberOfTokensPurchased: BN(100000000), amountSpendInDollars: BN(60000) })
+    })
+
+    it("...should return USDT balance of 30 000x10**6 ", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await USDTinstance.approve(AntkPrivateInstance.address, 600000000000, { from: buyer4 })
+      await AntkPrivateInstance.buyTokenWithTether(30000, { from: buyer4 });
+      const tokensBuy = await USDTinstance.balanceOf(AntkPrivateInstance.address)
+      expect(BN(tokensBuy)).to.be.bignumber.equal(BN(30000000000))
+    })
+
+    it("...should revert because not enough token to buy", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await USDTinstance.transfer(whitelist1, 100000000000, { from: buyer4 })
+      await USDTinstance.transfer(whitelist2, 100000000000, { from: buyer4 })
+      await USDTinstance.transfer(whitelist3, 100000000000, { from: buyer4 })
+      await USDTinstance.transfer(whitelist4, 100000000000, { from: buyer4 })
+      await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: buyer4 })
+      await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: whitelist1 })
+      await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: whitelist2 })
+      await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: whitelist3 })
+      await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: whitelist4 })
+      await AntkPrivateInstance.buyTokenWithTether(100000, { from: buyer4 });
+      await AntkPrivateInstance.buyTokenWithTether(100000, { from: whitelist1 });
+      await AntkPrivateInstance.buyTokenWithTether(100000, { from: whitelist2 });
+      await AntkPrivateInstance.buyTokenWithTether(100000, { from: whitelist3 });
+      await expectRevert(AntkPrivateInstance.buyTokenWithTether(100000, { from: whitelist4 }), "Il ne reste plus assez de tokens disponibles !")
+    })
+
   })
+
+  // ::::::::::::: buyTokenWithEth ::::::::::::: //
+
+  describe.only("test of buyTokenWithEth", async () => {
+
+    beforeEach(async () => {
+      USDTinstance = await USDT.new({ from: buyer4 })
+      AntkPrivateInstance = await AntkPrivateTest.new(USDTinstance.address, { from: owner })
+    })
+
+    it("...should revert because of status", async () => {
+      await expectRevert(AntkPrivateInstance.buyTokenWithEth({ from: buyer5, value: 5000000000000000000 }), "Vous ne pouvez pas investir pour le moment !")
+    })
+
+    it("...should revert because of status", async () => {
+      await AntkPrivateInstance.changeSalesStatus(1, { from: owner })
+      await expectRevert(AntkPrivateInstance.buyTokenWithEth({ from: buyer5, value: 5000000000000000000 }), "Vous ne pouvez pas investir pour le moment !")
+    })
+
+    it("...should return 7500", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await AntkPrivateInstance.buyTokenWithEth({ from: buyer5, value: 5000000000000000000 })
+      const investor = await AntkPrivateInstance.investors.call(buyer5)
+      expect(BN(investor[2])).to.be.bignumber.equal(BN(7500))
+    })
+
+    it("...should return ETH", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await AntkPrivateInstance.buyTokenWithEth({ from: buyer5, value: 5000000000000000000 })
+      const investor = await AntkPrivateInstance.investors.call(buyer5)
+            expect(investor[3]).to.equal("ETH")
+    })
+
+    it("...should return 12 500 000", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await AntkPrivateInstance.buyTokenWithEth({ from: buyer5, value: 5000000000000000000 })
+      const investor = await AntkPrivateInstance.investors.call(buyer5)
+      expect(BN(investor[1])).to.be.bignumber.equal(BN(12500000))
+    })
+
+    it("...should emit TokensBuy", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      const event = await AntkPrivateInstance.buyTokenWithEth({ from: buyer5, value: 5000000000000000000 })
+      expectEvent(event, "TokensBuy", { addressBuyer: buyer5, numberOfTokensPurchased: BN(12500000), amountSpendInDollars: BN(7500) })
+    })
+
+    it("...should return balance of ETH", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await AntkPrivateInstance.buyTokenWithEth({ from: buyer5, value: 5000000000000000000 })
+      const funds = await AntkPrivateInstance.seeFunds()
+      expect(funds[1].toString()).to.be.equal('5000000000000000000')
+    })
+
+
+  })
+
+
 
 })
