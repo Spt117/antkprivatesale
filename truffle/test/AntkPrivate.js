@@ -180,7 +180,7 @@ contract('AntkPrivateTest', accounts => {
 
   // ::::::::::::: buyTokenWithEth ::::::::::::: //
 
-  describe.only("test of buyTokenWithEth", async () => {
+  describe("test of buyTokenWithEth", async () => {
 
     beforeEach(async () => {
       USDTinstance = await USDT.new({ from: buyer4 })
@@ -207,7 +207,7 @@ contract('AntkPrivateTest', accounts => {
       await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
       await AntkPrivateInstance.buyTokenWithEth({ from: buyer5, value: 5000000000000000000 })
       const investor = await AntkPrivateInstance.investors.call(buyer5)
-            expect(investor[3]).to.equal("ETH")
+      expect(investor[3]).to.equal("ETH")
     })
 
     it("...should return 12 500 000", async () => {
@@ -233,6 +233,29 @@ contract('AntkPrivateTest', accounts => {
 
   })
 
+  // ::::::::::::: getFunds ::::::::::::: //
 
+  describe("test of getFunds", async () => {
+    beforeEach(async () => {
+      USDTinstance = await USDT.new({ from: buyer4 })
+      AntkPrivateInstance = await AntkPrivateTest.new(USDTinstance.address, { from: owner })
+      await USDTinstance.transfer(whitelist1, 100000000000, { from: buyer4 })
+      await USDTinstance.transfer(whitelist2, 100000000000, { from: buyer4 })
+      await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: whitelist1 })
+      await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: whitelist2 })
+      await AntkPrivateInstance.setWhitelist(arrayWhitelist, {from : owner})
+      await AntkPrivateInstance.changeSalesStatus(1, { from: owner })
+      await AntkPrivateInstance.buyTokenWithTether(100000, { from: whitelist1 })
+      await AntkPrivateInstance.buyTokenWithTether(80000, { from: whitelist2 })
+    })
+
+    it("...should return balance owner USDT 180 000", async () => {
+      await AntkPrivateInstance.getFunds({ from : owner })
+      const balanceUsdt = await USDTinstance.balanceOf(owner)
+      expect(BN(balanceUsdt)).to.be.bignumber.equal(BN(180000000000))
+    })
+
+    
+  })
 
 })

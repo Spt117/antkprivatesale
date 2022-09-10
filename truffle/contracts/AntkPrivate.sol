@@ -11,6 +11,8 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
  *
  * @notice This contract is a pre sale contract
  *
+ * @author https://antk.io
+ *
  * @dev Buyers can buy only with ETH or USDT
  * @dev Can add whitelists address to buy first
  *
@@ -209,7 +211,7 @@ contract AntkPrivate is Ownable {
             _amountDollars
         );
 
-                numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars);
+        numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars);
     }
 
     /**
@@ -254,7 +256,7 @@ contract AntkPrivate is Ownable {
             amountInDollars
         );
 
-                numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars);
+        numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars);
     }
 
     /**
@@ -267,17 +269,11 @@ contract AntkPrivate is Ownable {
         (bool sent, ) = owner().call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
     }
+
+    /**
+     * @notice see the USDT and the ETH on the contract
+     */
+    function seeFunds() external view returns (uint256 USDT, uint256 ETH) {
+        return (IERC20(usdt).balanceOf(address(this)), address(this).balance);
+    }
 }
-
-// ETH/USD Chainlink (ETH Mainet): 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419 (8 décimales)
-// ETH/USD Chainlink (ETH Goerli Testnet): 0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e (8 décimales)
-
-// USDT mainet address 0xdAC17F958D2ee523a2206206994597C13D831ec7 (6 décimales)
-// USDC Ropsten for tests : 0x07865c6E87B9F70255377e024ace6630C1Eaa37F (6 décimales)
-
-//Interface     function investors (address _address) external view returns
-//(bool isWhitelisted, address referrer, uint numberOfTokensPurchased, uint amountSpendInDollars, string memory asset);
-
-// function getOwnerBalance(address addr) public view returns (uint) {
-//     return addr.balance;
-// }
