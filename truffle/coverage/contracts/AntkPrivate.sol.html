@@ -22,12 +22,12 @@
       <div class='fl pad1y space-right2'>
         <span class="strong">0% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>0/46</span>
+        <span class='fraction'>0/40</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">0% </span>
         <span class="quiet">Branches</span>
-        <span class='fraction'>0/32</span>
+        <span class='fraction'>0/26</span>
       </div>
       <div class='fl pad1y space-right2'>
         <span class="strong">0% </span>
@@ -37,7 +37,7 @@
       <div class='fl pad1y space-right2'>
         <span class="strong">0% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>0/43</span>
+        <span class='fraction'>0/38</span>
       </div>
     </div>
   </div>
@@ -302,31 +302,9 @@
 257
 258
 259
-260
-261
-262
-263
-264
-265
-266
-267
-268
-269
-270
-271
-272
-273
-274
-275
-276
-277
-278
-279
-280
-281
-282
-283
-284</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+260</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -433,25 +411,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -600,14 +559,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
@@ -621,6 +573,8 @@ import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Int
  * @title Private Sale ANTK
  *
  * @notice This contract is a pre sale contract
+ *
+ * @author https://antk.io
  *
  * @dev Buyers can buy only with ETH or USDT
  * @dev Can add whitelists address to buy first
@@ -686,7 +640,7 @@ contract AntkPrivate is Ownable {
             "Vous ne pouvez pas investir pour le moment !"
         );
 <span class="cstat-no" title="statement not covered" >        require(</span>
-            _minimumAmountToBuy(_amount),
+            _amount&gt;=1,
             "Ce montant est inferieur au montant minimum !"
         );
 <span class="cstat-no" title="statement not covered" >        require(</span>
@@ -716,25 +670,6 @@ contract AntkPrivate is Ownable {
 <span class="cstat-no" title="statement not covered" >        salesStatus = SalesStatus(_idStatus)</span>;
 &nbsp;
 <span class="cstat-no" title="statement not covered" >        emit newStatus(SalesStatus(_idStatus));</span>
-    }
-&nbsp;
-    /**
-     * @notice check the minimum require to buy
-     * @dev this is a private function, called in the modifier
-     * @param _amountDollars is the amount to buy in dollars
-     */
-<span class="fstat-no" title="function not covered" >    function _minimumAmountToBuy(uint128 _amountDollars)</span>
-        private
-        view
-        returns (bool)
-    {
-<span class="cstat-no" title="statement not covered" >        if (numberOfTokenToSell &gt; 400000000 &amp;&amp; _amountDollars &gt;= 250)</span>
-<span class="cstat-no" title="statement not covered" >            return true;</span>
-<span class="cstat-no" title="statement not covered" >        if (numberOfTokenToSell &gt; 300000000 &amp;&amp; _amountDollars &gt;= 100)</span>
-<span class="cstat-no" title="statement not covered" >            return true;</span>
-<span class="cstat-no" title="statement not covered" >        if (numberOfTokenToSell &lt;= 300000000 &amp;&amp; _amountDollars &gt;= 50)</span>
-<span class="cstat-no" title="statement not covered" >            return true;</span>
-        else <span class="cstat-no" title="statement not covered" >return false;</span>
     }
 &nbsp;
     /**
@@ -820,7 +755,7 @@ contract AntkPrivate is Ownable {
             _amountDollars
         );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >                numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars)</span>;
+<span class="cstat-no" title="statement not covered" >        numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars)</span>;
     }
 &nbsp;
     /**
@@ -865,7 +800,7 @@ contract AntkPrivate is Ownable {
             amountInDollars
         );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >                numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars)</span>;
+<span class="cstat-no" title="statement not covered" >        numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars)</span>;
     }
 &nbsp;
     /**
@@ -878,27 +813,20 @@ contract AntkPrivate is Ownable {
 <span class="cstat-no" title="statement not covered" >        (bool sent, ) = owner().call{value: address(this).balance}("");</span>
 <span class="cstat-no" title="statement not covered" >        require(sent, "Failed to send Ether")</span>;
     }
-}
 &nbsp;
-// ETH/USD Chainlink (ETH Mainet): 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419 (8 décimales)
-// ETH/USD Chainlink (ETH Goerli Testnet): 0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e (8 décimales)
-&nbsp;
-// USDT mainet address 0xdAC17F958D2ee523a2206206994597C13D831ec7 (6 décimales)
-// USDC Ropsten for tests : 0x07865c6E87B9F70255377e024ace6630C1Eaa37F (6 décimales)
-&nbsp;
-//Interface     function investors (address _address) external view returns
-//(bool isWhitelisted, address referrer, uint numberOfTokensPurchased, uint amountSpendInDollars, string memory asset);
-&nbsp;
-// function getOwnerBalance(address addr) public view returns (uint) {
-//     return addr.balance;
-// }
-&nbsp;</pre></td></tr>
+    /**
+     * @notice see the USDT and the ETH on the contract
+     */
+<span class="fstat-no" title="function not covered" >    function seeFunds() external view returns (uint256 USDT, uint256 ETH) {</span>
+<span class="cstat-no" title="statement not covered" >        return (IERC20(usdt).balanceOf(address(this)), address(this).balance);</span>
+    }
+}</pre></td></tr>
 </table></pre>
 <div class='push'></div><!-- for sticky footer -->
 </div><!-- /wrapper -->
 <div class='footer quiet pad2 space-top1 center small'>
   Code coverage
-  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Fri Sep 09 2022 10:13:11 GMT+0200 (Central European Summer Time)
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Mon Sep 12 2022 14:45:35 GMT+0200 (Central European Summer Time)
 </div>
 </div>
 <script src="../prettify.js"></script>

@@ -77,7 +77,7 @@ contract AntkPrivate is Ownable {
             "Vous ne pouvez pas investir pour le moment !"
         );
         require(
-            _minimumAmountToBuy(_amount),
+            _amount>=1,
             "Ce montant est inferieur au montant minimum !"
         );
         require(
@@ -107,25 +107,6 @@ contract AntkPrivate is Ownable {
         salesStatus = SalesStatus(_idStatus);
 
         emit newStatus(SalesStatus(_idStatus));
-    }
-
-    /**
-     * @notice check the minimum require to buy
-     * @dev this is a private function, called in the modifier
-     * @param _amountDollars is the amount to buy in dollars
-     */
-    function _minimumAmountToBuy(uint128 _amountDollars)
-        private
-        view
-        returns (bool)
-    {
-        if (numberOfTokenToSell > 400000000 && _amountDollars >= 250)
-            return true;
-        if (numberOfTokenToSell > 300000000 && _amountDollars >= 100)
-            return true;
-        if (numberOfTokenToSell <= 300000000 && _amountDollars >= 50)
-            return true;
-        else return false;
     }
 
     /**

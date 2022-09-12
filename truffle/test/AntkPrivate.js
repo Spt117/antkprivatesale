@@ -140,7 +140,7 @@ contract('AntkPrivateTest', accounts => {
     it("...should revert because of minimum amout to buy", async () => {
       await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
       await USDTinstance.approve(AntkPrivateInstance.address, 50000000000, { from: buyer4 })
-      await expectRevert(AntkPrivateInstance.buyTokenWithTether(50, { from: buyer4 }), "Ce montant est inferieur au montant minimum !");
+      await expectRevert(AntkPrivateInstance.buyTokenWithTether(0.1, { from: buyer4 }), "underflow");
     })
 
     it("...should emit Tokensbuy", async () => {
