@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.14;
+pragma solidity 0.8.17;
 
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -39,7 +39,6 @@ contract AntkPrivate is Ownable {
         bool isWhitelisted;
         uint128 numberOfTokensPurchased;
         uint128 amountSpendInDollars;
-        string asset;
     }
 
     /// buyer's address  => buyer's informations
@@ -172,6 +171,8 @@ contract AntkPrivate is Ownable {
             "Vous n'avez pas assez de Tether !"
         );
 
+        uint128 numberOfTokenToBuy = calculNumberOfTokenToBuy(_amountDollars);
+
         bool result = IERC20(usdt).transferFrom(
             msg.sender,
             address(this),
@@ -180,19 +181,16 @@ contract AntkPrivate is Ownable {
         require(result, "Transfer from error");
 
         investors[msg.sender]
-            .numberOfTokensPurchased += calculNumberOfTokenToBuy(
-            _amountDollars
-        );
+            .numberOfTokensPurchased += numberOfTokenToBuy;
         investors[msg.sender].amountSpendInDollars += _amountDollars;
-        investors[msg.sender].asset = "USDT";
 
         emit TokensBuy(
             msg.sender,
-            calculNumberOfTokenToBuy(_amountDollars),
+            numberOfTokenToBuy,
             _amountDollars
         );
 
-        numberOfTokenToSell -= calculNumberOfTokenToBuy(_amountDollars);
+        numberOfTokenToSell -= numberOfTokenToBuy;
     }
 
     /**
@@ -223,21 +221,19 @@ contract AntkPrivate is Ownable {
         uint128 amountInDollars = uint128(
             (msg.value * getLatestPrice()) / 10**26
         );
+        
+        uint128 numberOfTokenToBuy = calculNumberOfTokenToBuy(amountInDollars);
 
-        investors[msg.sender]
-            .numberOfTokensPurchased += calculNumberOfTokenToBuy(
-            amountInDollars
-        );
+        investors[msg.sender].numberOfTokensPurchased += numberOfTokenToBuy;
         investors[msg.sender].amountSpendInDollars += amountInDollars;
-        investors[msg.sender].asset = "ETH";
 
         emit TokensBuy(
             msg.sender,
-            calculNumberOfTokenToBuy(amountInDollars),
+            numberOfTokenToBuy,
             amountInDollars
         );
 
-        numberOfTokenToSell -= calculNumberOfTokenToBuy(amountInDollars);
+        numberOfTokenToSell -= numberOfTokenToBuy;
     }
 
     /**
