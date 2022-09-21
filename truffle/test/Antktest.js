@@ -221,6 +221,16 @@ contract('AntkPrivateTest', accounts => {
             const numberOfTokenBonus = await AntkPrivateInstance.numberOfTokenBonus()
             expect(BN(numberOfTokenBonus)).to.be.bignumber.equal(BN(7500000))
           })
+
+          it("...should return amount$ = 30000 for whitelisted", async () => {
+          await USDTinstance.transfer(whitelist1, 100000000000, { from: buyer4 })
+          await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: whitelist1 })
+          await AntkPrivateInstance.changeSalesStatus(1, { from: owner })
+            await AntkPrivateInstance.buyTokenWithTether(30000, merkleProof3, { from: whitelist1})
+            const investor = await AntkPrivateInstance.investors(accounts[1])
+            expect(BN(investor[1])).to.be.bignumber.equal(BN(30000))
+          })
+      
     
       })
 
@@ -242,14 +252,14 @@ contract('AntkPrivateTest', accounts => {
       await expectRevert(AntkPrivateInstance.buyTokenWithEth(merkleProof2, { from: buyer5, value: 5000000000000000000 }), "Vous ne pouvez pas investir pour le moment !")
     })
 
-    it("...should return 7500", async () => {
+    it("...should return 7500 public", async () => {
       await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
       await AntkPrivateInstance.buyTokenWithEth(merkleProof2, { from: buyer5, value: 5000000000000000000 })
       const investor = await AntkPrivateInstance.investors(buyer5)
       expect(BN(investor[1])).to.be.bignumber.equal(BN(7500))
     })
 
-    it("...should return 7500", async () => {
+    it("...should return 7500 whitelist", async () => {
       await AntkPrivateInstance.changeSalesStatus(1, { from: owner })
       await AntkPrivateInstance.buyTokenWithEth(merkleProof3, { from: accounts[1], value: 5000000000000000000 })
       const investor = await AntkPrivateInstance.investors(accounts[1])
@@ -276,7 +286,38 @@ contract('AntkPrivateTest', accounts => {
       expect(funds[1].toString()).to.be.equal('5000000000000000000')
     })
 
+    it("...should revert because of secureETH", async () => {
+      await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+      await AntkPrivateInstance.secureBuyEth({from: owner})
+      await expectRevert(AntkPrivateInstance.buyTokenWithEth(merkleProof2, { from: buyer5, value: 5000000000000000000 }), "Vous ne pouvez pas acheter en Eth pour le moment !")
+    })
+
 
   })
+
+    // ::::::::::::: getFunds ::::::::::::: //
+
+    describe("test of getFunds", async () => {
+        beforeEach(async () => {
+            USDTinstance = await USDT.new({ from: buyer4 })
+            AntkPrivateInstance = await AntkPrivateTest.new(USDTinstance.address, goerliEthChainlink, owner, root, { from: owner })
+          await USDTinstance.transfer(accounts[1], 100000000000, { from: buyer4 })
+          await USDTinstance.transfer(whitelist2, 100000000000, { from: buyer4 })
+          await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: accounts[1] })
+          await USDTinstance.approve(AntkPrivateInstance.address, 10000000000000, { from: whitelist2 })
+          await AntkPrivateInstance.changeSalesStatus(1, { from: owner })
+          await AntkPrivateInstance.buyTokenWithTether(100000, merkleProof3, { from: accounts[1] })
+          await AntkPrivateInstance.changeSalesStatus(2, { from: owner })
+          await AntkPrivateInstance.buyTokenWithTether(80000, merkleProof3, { from: whitelist2 })
+        })
+    
+        it("...should return balance owner USDT 180 000", async () => {
+          await AntkPrivateInstance.getFunds({ from : owner })
+          const balanceUsdt = await USDTinstance.balanceOf(owner)
+          expect(BN(balanceUsdt)).to.be.bignumber.equal(BN(180000000000))
+        })
+    
+        
+      })
 
 })
