@@ -9,6 +9,9 @@
     "@openzeppelin/contracts": "^4.7.3",
     "@openzeppelin/test-helpers": "^0.5.16",
     "@truffle/hdwallet-provider": "^2.0.14",
-    "dotenv": "^16.0.2"
+    "dotenv": "^16.0.2",
+    "keccak256": "^1.0.6",
+    "merkletree": "^1.5.0",
+    "merkletreejs": "^0.2.32"
   }
 }
