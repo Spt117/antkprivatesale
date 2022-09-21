@@ -45,6 +45,11 @@ contract AntkPrivate is Ownable {
      */
     bytes32 private root;
 
+    /**
+     * @dev activeEth to secure the buyEth if chainlink doesn't work
+     */
+    bool unactiveEth;
+
     /// save informations about the buyers
     struct Investor {
         uint128 numberOfTokensPurchased;
@@ -78,11 +83,16 @@ contract AntkPrivate is Ownable {
     /**
      * @notice Constructor to set address at the deployement
      * @param _usdt is the ERC20 asset to buy Antk
-     * @param _ethPrice is the Chainlink address Price of eth 
+     * @param _ethPrice is the Chainlink address Price of eth
      * @param _antkWallet is the wallet that will recover the funds
      * @param _root is the rootHash of the whitelisted address
      */
-    constructor(address _usdt, address _ethPrice, address _antkWallet, bytes32 _root) {
+    constructor(
+        address _usdt,
+        address _ethPrice,
+        address _antkWallet,
+        bytes32 _root
+    ) {
         usdt = _usdt;
         ethPrice = _ethPrice;
         antkWallet = _antkWallet;
@@ -194,7 +204,6 @@ contract AntkPrivate is Ownable {
         uint128 _amountDollars,
         bytes32[] calldata _merkleProof
     ) external requireToBuy(_amountDollars, _merkleProof) {
-
         uint256 numberOfTokenToBuy = calculNumberOfTokenToBuy(_amountDollars);
 
         bool result = IERC20(usdt).transferFrom(
@@ -222,13 +231,12 @@ contract AntkPrivate is Ownable {
      * @notice Get price of ETH in $ with Chainlink
      */
     function getLatestPrice() public view returns (uint256) {
+        // AggregatorV3Interface priceFeed = AggregatorV3Interface(
+        //     ethPrice
+        // );
+        // (, int256 price, , , ) = priceFeed.latestRoundData();
 
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            ethPrice
-        );
-        (, int256 price, , , ) = priceFeed.latestRoundData();
-
-        return uint256(price);
+        return uint256(150000000000);
     }
 
     /**
@@ -243,6 +251,10 @@ contract AntkPrivate is Ownable {
             _merkleProof
         )
     {
+        require(
+            !unactiveEth,
+            "Vous ne pouvez pas acheter en Eth pour le moment !"
+        );
         uint256 amountInDollars = uint256(
             (msg.value * getLatestPrice()) / 10**26
         );
@@ -271,17 +283,28 @@ contract AntkPrivate is Ownable {
     function _setBonus(uint128 _numberToken, uint128 _amountDollars) private {
         uint128 bonus;
         if (_amountDollars >= 1500) {
-            if(numberOfTokenBonus >= _numberToken / 10){
-            bonus = _numberToken / 10;}
-            else bonus = uint128(numberOfTokenBonus);
+            if (numberOfTokenBonus >= _numberToken / 10) {
+                bonus = _numberToken / 10;
+            } else bonus = uint128(numberOfTokenBonus);
         } else {
-            if(numberOfTokenBonus >= (_numberToken * 65) / 1000) {
-            bonus = (_numberToken * 65) / 1000;}
-            else{bonus = uint128(numberOfTokenBonus);}
+            if (numberOfTokenBonus >= (_numberToken * 65) / 1000) {
+                bonus = (_numberToken * 65) / 1000;
+            } else {
+                bonus = uint128(numberOfTokenBonus);
+            }
         }
         investors[msg.sender].bonusTokens += bonus;
         numberOfTokenBonus -= bonus;
     }
+
+    /**
+     * @notice send the USDT and the ETH to ANTK company
+     * @dev only the Owner of the contract can call this function
+     */
+     function secureBuyEth() external onlyOwner {
+        if(!unactiveEth){unactiveEth=true;}
+        else unactiveEth = false;
+     }
 
     /**
      * @notice send the USDT and the ETH to ANTK company
@@ -293,9 +316,7 @@ contract AntkPrivate is Ownable {
             IERC20(usdt).balanceOf(address(this))
         );
 
-        (bool sent, ) = antkWallet.call{
-            value: address(this).balance
-        }("");
+        (bool sent, ) = antkWallet.call{value: address(this).balance}("");
         require(sent, "Failed to send Ether");
     }
 
@@ -307,7 +328,6 @@ contract AntkPrivate is Ownable {
     }
 }
 
-
-    // address immutable usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    // address immutable ethPrice = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
-    // address immutable antkWallet = 0x80920A7960670f01f63d6fA9B1f2a2Efd1C2A371;
+// address immutable usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+// address immutable ethPrice = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+// address immutable antkWallet = 0x80920A7960670f01f63d6fA9B1f2a2Efd1C2A371;
