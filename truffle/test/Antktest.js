@@ -1,7 +1,5 @@
 const AntkPrivateTest = artifacts.require("./AntkPrivate.sol");
 const USDT = artifacts.require("./USDT.sol");
-// const {MerkleTree} = require("merkletreejs")
-// const keccak256 = require("keccak256")
 
 const { BN, expectRevert, expectEvent } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
