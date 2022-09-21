@@ -271,9 +271,13 @@ contract AntkPrivate is Ownable {
     function _setBonus(uint128 _numberToken, uint128 _amountDollars) private {
         uint128 bonus;
         if (_amountDollars >= 1500) {
-            bonus = _numberToken / 10;
+            if(numberOfTokenBonus >= _numberToken / 10){
+            bonus = _numberToken / 10;}
+            else bonus = uint128(numberOfTokenBonus);
         } else {
-            bonus = (_numberToken * 65) / 1000;
+            if(numberOfTokenBonus >= (_numberToken * 65) / 1000) {
+            bonus = (_numberToken * 65) / 1000;}
+            else{bonus = uint128(numberOfTokenBonus);}
         }
         investors[msg.sender].bonusTokens += bonus;
         numberOfTokenBonus -= bonus;
