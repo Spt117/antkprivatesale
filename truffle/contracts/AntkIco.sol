@@ -92,4 +92,92 @@ contract AntkIco is Ownable {
         salesStatus = SalesStatus(_idStatus);
         emit NewStatus(SalesStatus(_idStatus));
     }
+
+    function calculNumberOfTokenPhase1(uint256 _amountInDollards)
+        private
+        pure
+        returns (uint256)
+    {
+        return (_amountInDollards * 10000) / 12;
+    }
+
+    function calculNumberOfTokenPhase2(uint256 _amountInDollards)
+        private
+        pure
+        returns (uint256)
+    {
+        return (_amountInDollards * 10000) / 15;
+    }
+
+    function calculNumberOfTokenPhase3(uint256 _amountInDollards)
+        private
+        pure
+        returns (uint256)
+    {
+        return (_amountInDollards * 10000) / 18;
+    }
+
+    /**
+     * @notice calcul number of token to buy
+     * @dev this is a public function, called in the modifier and buy function
+     * @dev we use it with the dapp to show the number of token to buy
+     * @param _amountDollars is the amount to buy in dollars
+     */
+    function calculNumberOfTokenToBuy(uint256 _amountDollars)
+        public
+        view
+        returns (uint256)
+    {
+        if (numberOfTokenToSell > 3300000000) {
+            if (
+                numberOfTokenToSell -
+                    calculNumberOfTokenPhase1(_amountDollars) >
+                3300000000
+            ) {
+                return calculNumberOfTokenPhase1(_amountDollars);
+            } else {
+                uint256 tokensPhase1 = numberOfTokenToSell - 3300000000;
+                uint256 tokensPhase2 = ((_amountDollars -
+                    ((tokensPhase1 * 12) / 10000)) * 10000) / 15;
+                return tokensPhase1 + tokensPhase2;
+            }
+        } else if (numberOfTokenToSell > 2600000000) {
+            if (
+                numberOfTokenToSell -
+                    calculNumberOfTokenPhase2(_amountDollars) >
+                2600000000
+            ) {
+                return calculNumberOfTokenPhase2(_amountDollars);
+            } else {
+                uint256 tokensPhase2 = numberOfTokenToSell - 2600000000;
+                uint256 tokensPhase3 = ((_amountDollars -
+                    ((tokensPhase2 * 15) / 10000)) * 10000) / 18;
+                return tokensPhase2 + tokensPhase3;
+            }
+        } else {
+            return (_amountDollars * 10000) / 18;
+        }
+    }
+
+    /**
+     * @notice set the bonus to the buyer
+     * @param _numberToken is the number of token buy
+     * @param _amountDollars is the price in dollars
+     */
+    function _setBonus(uint128 _numberToken, uint128 _amountDollars) private {
+        uint128 bonus;
+        if (_amountDollars >= 1500) {
+            if (numberOfTokenBonus >= _numberToken / 10) {
+                bonus = _numberToken / 10;
+            } else bonus = uint128(numberOfTokenBonus);
+        } else {
+            if (numberOfTokenBonus >= (_numberToken * 65) / 1000) {
+                bonus = (_numberToken * 65) / 1000;
+            } else {
+                bonus = uint128(numberOfTokenBonus);
+            }
+        }
+        investors[msg.sender].bonusTokens += bonus;
+        numberOfTokenBonus -= bonus;
+    }
 }
