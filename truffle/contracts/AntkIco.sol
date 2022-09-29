@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity 0.8.16;
 
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
-import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "../node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "../node_modules/@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
@@ -24,6 +24,11 @@ contract AntkIco is Ownable {
     address immutable usdt;
     address immutable ethPrice;
     address immutable antkWallet;
+
+    /**
+     * @dev activeEth to secure the buyEth if chainlink doesn't work
+     */
+    bool unactiveEth;
 
     /// save informations about the buyers
     struct Investor {
@@ -73,14 +78,40 @@ contract AntkIco is Ownable {
     /**
      * @notice check that the purchase parameters are correct
      * @dev called in function buy with ETH and buy with USDT
-     * @param _amount is the amount to buy in dollars
+     * @param _amountDollars is the amount to buy in dollars
      */
-    modifier requireToBuy(uint256 _amount) {
+    modifier requireToBuy(uint256 _amountDollars) {
         require(
             (salesStatus == SalesStatus(1)),
             "Vous ne pouvez pas investir pour le moment !"
         );
+        require(
+            requireAmount(_amountDollars),
+            "Le montant investi est inferieur au montant minimum !"
+        );
+        require(
+            _amountDollars <= 150000,
+            "Vous ne pouvez pas investir plus de 150 000 $"
+        );
+        require(
+            calculNumberOfTokenToBuy(_amountDollars) >= numberOfTokenToSell,
+            "Il n'y a plus assez de jetons disponibles !"
+        );
+
         _;
+    }
+
+    function requireAmount(uint256 _amountDollars) private view returns (bool) {
+        if (numberOfTokenToSell > 3300000000 && _amountDollars >= 250) {
+            return true;
+        } else if (
+            numberOfTokenToSell <= 3300000000 &&
+            numberOfTokenToSell > 2600000000 &&
+            _amountDollars >= 100
+        ) return true;
+        else if (numberOfTokenToSell <= 2600000000 && _amountDollars >= 10)
+            return true;
+        else return false;
     }
 
     /**
@@ -124,7 +155,7 @@ contract AntkIco is Ownable {
      * @param _amountDollars is the amount to buy in dollars
      */
     function calculNumberOfTokenToBuy(uint256 _amountDollars)
-        public
+        private
         view
         returns (uint256)
     {
@@ -179,5 +210,110 @@ contract AntkIco is Ownable {
         }
         investors[msg.sender].bonusTokens += bonus;
         numberOfTokenBonus -= bonus;
+    }
+
+    /**
+     * @notice buy ANTK with USDT
+     * @param _amountDollars is the amount to buy in dollars
+     */
+    function buyTokenWithTether(uint128 _amountDollars)
+        external
+        requireToBuy(_amountDollars)
+    {
+        uint256 numberOfTokenToBuy = calculNumberOfTokenToBuy(_amountDollars);
+
+        SafeERC20.safeTransferFrom(
+            IERC20(usdt),
+            msg.sender,
+            address(this),
+            _amountDollars
+        );
+
+        investors[msg.sender].numberOfTokensPurchased += uint128(
+            numberOfTokenToBuy
+        );
+        investors[msg.sender].amountSpendInDollars += _amountDollars;
+
+        emit TokensBuy(msg.sender, numberOfTokenToBuy, _amountDollars);
+
+        numberOfTokenToSell -= numberOfTokenToBuy;
+
+        if (_amountDollars >= 500 && numberOfTokenBonus > 0) {
+            _setBonus(uint128(numberOfTokenToBuy), uint128(_amountDollars));
+        }
+    }
+
+    /**
+     * @notice Get price of ETH in $ with Chainlink
+     */
+    function getLatestPrice() public view returns (uint256) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(ethPrice);
+        (, int256 price, , , ) = priceFeed.latestRoundData();
+
+        return uint256(price);
+    }
+
+    /**
+     * @notice send the USDT and the ETH to ANTK company
+     * @dev only the Owner of the contract can call this function
+     */
+    function secureBuyEth() external onlyOwner {
+        if (!unactiveEth) {
+            unactiveEth = true;
+        } else unactiveEth = false;
+    }
+
+    /**
+     * @notice buy ANTK with ETH
+     * @dev msg.value is the amount of ETH to send buy the buyer
+     */
+    function buyTokenWithEth()
+        external
+        payable
+        requireToBuy(uint256((msg.value * getLatestPrice()) / 10**26))
+    {
+        require(
+            !unactiveEth,
+            "Vous ne pouvez pas acheter en Eth pour le moment !"
+        );
+        uint256 amountInDollars = uint256(
+            (msg.value * getLatestPrice()) / 10**26
+        );
+
+        uint256 numberOfTokenToBuy = calculNumberOfTokenToBuy(amountInDollars);
+
+        investors[msg.sender].numberOfTokensPurchased += uint128(
+            numberOfTokenToBuy
+        );
+        investors[msg.sender].amountSpendInDollars += uint128(amountInDollars);
+
+        emit TokensBuy(msg.sender, numberOfTokenToBuy, amountInDollars);
+
+        numberOfTokenToSell -= numberOfTokenToBuy;
+
+        if (amountInDollars >= 500 && numberOfTokenBonus > 0) {
+            _setBonus(uint128(numberOfTokenToBuy), uint128(amountInDollars));
+        }
+    }
+
+    /**
+     * @notice send the ETH to ANTK company
+     * @dev only the Owner of the contract can call this function
+     */
+    function getEth() external onlyOwner {
+        (bool sent, ) = antkWallet.call{value: address(this).balance}("");
+        require(sent, "Failed to send Ether");
+    }
+
+    /**
+     * @notice send the USDT to ANTK company
+     * @dev only the Owner of the contract can call this function
+     */
+    function getUsdt() external onlyOwner {
+        SafeERC20.safeTransfer(
+            IERC20(usdt),
+            antkWallet,
+            IERC20(usdt).balanceOf(address(this))
+        );
     }
 }
