@@ -231,12 +231,12 @@ contract AntkPrivate is Ownable {
      * @notice Get price of ETH in $ with Chainlink
      */
     function getLatestPrice() public view returns (uint256) {
-        // AggregatorV3Interface priceFeed = AggregatorV3Interface(
-        //     ethPrice
-        // );
-        // (, int256 price, , , ) = priceFeed.latestRoundData();
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            ethPrice
+        );
+        (, int256 price, , , ) = priceFeed.latestRoundData();
 
-        return uint256(150000000000);
+        return uint256(price);
     }
 
     /**
