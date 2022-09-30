@@ -23,7 +23,7 @@ contract AntkIco is Ownable {
      */
     address immutable usdt;
     address immutable ethPrice;
-    address immutable antkWallet;
+    address payable immutable antkWallet;
 
     /**
      * @dev activeEth to secure the buyEth if chainlink doesn't work
@@ -68,7 +68,7 @@ contract AntkIco is Ownable {
     constructor(
         address _usdt,
         address _ethPrice,
-        address _antkWallet
+        address payable _antkWallet
     ) {
         usdt = _usdt;
         ethPrice = _ethPrice;
@@ -101,6 +101,11 @@ contract AntkIco is Ownable {
         _;
     }
 
+    /**
+     * @notice check minimum and maximum to buy
+     * @dev this a private function
+     * @param _amountDollars is the amount of dollar to spend
+     */
     function requireAmount(uint256 _amountDollars) private view returns (bool) {
         if (numberOfTokenToSell > 3300000000 && _amountDollars >= 250) {
             return true;
@@ -124,6 +129,11 @@ contract AntkIco is Ownable {
         emit NewStatus(SalesStatus(_idStatus));
     }
 
+    /**
+     * @notice calcul number of token to buy funtion of price
+     * @dev this is a private function
+     * @param _amountInDollards is the amount to buy in dollars
+     */
     function calculNumberOfTokenPhase1(uint256 _amountInDollards)
         private
         pure
@@ -150,7 +160,7 @@ contract AntkIco is Ownable {
 
     /**
      * @notice calcul number of token to buy
-     * @dev this is a public function, called in the modifier and buy function
+     * @dev this is a private function, called in the modifier and buy function
      * @dev we use it with the dapp to show the number of token to buy
      * @param _amountDollars is the amount to buy in dollars
      */
