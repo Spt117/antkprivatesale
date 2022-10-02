@@ -94,7 +94,7 @@ contract AntkIco is Ownable {
             "Vous ne pouvez pas investir plus de 150 000 $"
         );
         require(
-            calculNumberOfTokenToBuy(_amountDollars) >= numberOfTokenToSell,
+            calculNumberOfTokenToBuy(_amountDollars) <= numberOfTokenToSell,
             "Il n'y a plus assez de jetons disponibles !"
         );
 
@@ -257,10 +257,10 @@ contract AntkIco is Ownable {
      * @notice Get price of ETH in $ with Chainlink
      */
     function getLatestPrice() public view returns (uint256) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(ethPrice);
-        (, int256 price, , , ) = priceFeed.latestRoundData();
+        // AggregatorV3Interface priceFeed = AggregatorV3Interface(ethPrice);
+        // (, int256 price, , , ) = priceFeed.latestRoundData();
 
-        return uint256(price);
+        return uint256(150000000000);
     }
 
     /**
