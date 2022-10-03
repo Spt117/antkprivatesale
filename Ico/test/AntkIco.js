@@ -211,16 +211,12 @@ describe("Test of getEth", async () => {
     await expect(antkIcoInstance.connect(other).getEth()).to.be.revertedWith("Ownable: caller is not the owner");
   })
   
-  it("...should return balance of ownable", async () => {
-    // let provider = ethers.getDefaultProvider();
-    let balance = await antkIcoInstance.provider.getBalance(owner.address);
-    console.log(balance)
+  it("...should return balance of antkIcoInstance = 0", async () => {
     await antkIcoInstance.changeSalesStatus(1)
     await antkIcoInstance.connect(other2).buyTokenWithEth({ value: ethers.utils.parseUnits("100", "ether") })
     await antkIcoInstance.connect(owner).getEth()
-    let newbalance = await antkIcoInstance.provider.getBalance(owner.address);
-    console.log(newbalance)
-    expect(newbalance).to.equal(balance + 100)
+    let balance = await antkIcoInstance.provider.getBalance(antkIcoInstance.address);
+    expect(balance).to.equal(0)
 
   })
 
